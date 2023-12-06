@@ -1,3 +1,4 @@
+/* eslint-disable quotes */
 export enum titlesDamageInfo {
   double_damage_from = "Recibe daño doble de:",
   double_damage_to = "Hace doble daño a: ",
@@ -26,6 +27,14 @@ export enum ETypes {
   DARK = "Siniestro",
   STEEL = "Acero",
   FAIRY = "Hada",
+}
+
+export interface ITitlesDamageInfo {
+  [key: string]: titlesDamageInfo;
+}
+
+export interface ETypesKeys {
+  [key: string]: ETypes;
 }
 
 export interface Generation {

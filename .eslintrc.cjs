@@ -87,7 +87,7 @@ module.exports = {
 
     'prefer-promise-reject-errors': 'off',
 
-    quotes: ['warn', 'single', { avoidEscape: true }],
+    // quotes: ['warn', 'single', { avoidEscape: true }],
 
     // this rule, if on, would require explicit return type on the `render` function
     '@typescript-eslint/explicit-function-return-type': 'off',
@@ -100,6 +100,8 @@ module.exports = {
     'no-unused-vars': 'off',
 
     // allow debugger during development only
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off'
+    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
+    '@typescript-eslint/no-explicit-any': 'off', // Deshabilita la regla para todo el archivo
+    '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: 'any' }] // Ajusta la regla para permitir "any" como variable no utilizada
   }
 }

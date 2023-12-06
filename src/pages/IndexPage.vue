@@ -37,7 +37,7 @@
         <q-item v-for="(type, index) in pokemon?.types" :key="index">
           <q-item-section>
             <q-item-label>
-              {{ ETypes[type?.type?.name.toUpperCase()] }}
+              {{  (ETypes as ETypesKeys)[type?.type?.name.toUpperCase()] }}
             </q-item-label>
           </q-item-section>
         </q-item>
@@ -48,9 +48,9 @@
         <q-item v-for='(info, index) of typeInfo' :key='index'>
           <q-item-section>
             <q-item-label v-for='(title, index) of Object.keys(info)' :key='index' class='row items-center'>
-              {{ titlesDamageInfo[title] }}
-              <q-item-label v-for='(data, index) of info[title].map((t: { name: any }) => t.name)' :key='index' class='q-mr-sm q-ml-sm font-bold text-weight-bold'>
-                {{  ETypes[data.toUpperCase()]  }}
+              {{ (titlesDamageInfo as ITitlesDamageInfo)[title] }}
+              <q-item-label v-for='(data, index) of info[title].map((t:any) => t.name)' :key='index' class='q-mr-sm q-ml-sm font-bold text-weight-bold'>
+                {{  (ETypes as ETypesKeys)[data.toUpperCase()]  }}
               </q-item-label>
 
             </q-item-label>
@@ -64,7 +64,7 @@
                 <div>
                   <p class='text-weight-bold'>{{ poke?.name }}</p>
                   <p v-for="(type, index) of poke?.types" :key='index'>
-                    {{ ETypes[type.type.name.toUpperCase()] }}
+                    {{  (ETypes as ETypesKeys)[type.type.name.toUpperCase()] }}
                   </p>
                 </div>
               <img :src="poke?.sprites?.front_default" :alt="poke.name">
@@ -82,7 +82,7 @@
 <script setup lang="ts">
 import { useQuasar } from 'quasar'
 import { ref } from 'vue'
-import { titlesDamageInfo, ETypes } from 'src/interfaces/types'
+import { titlesDamageInfo, ETypes, ETypesKeys, ITitlesDamageInfo } from 'src/interfaces/types'
 import { POKEAPI_POKEMONS, POKEAPI_TYPES } from 'src/api/pokeapi'
 import LoaderComponent from 'src/components/LoaderComponent.vue'
 

@@ -8,13 +8,18 @@ declare module '@vue/runtime-core' {
   }
 }
 
+const POKEAPI_POKEMONS = 'https://pokeapi.co/api/v2/pokemon'
+const POKEAPI_TYPES = 'https://pokeapi.co/api/v2/type'
+
 // Be careful when using SSR for cross-request state pollution
 // due to creating a Singleton instance here;
 // If any client changes this (global) instance, it might be a
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
-const api = axios.create({ baseURL: 'https://api.example.com' })
+const apiPokemons = axios.create({ baseURL: POKEAPI_POKEMONS })
+const apiTypes = axios.create({ baseURL: POKEAPI_TYPES })
+const apiAxios = axios.create()
 
 export default boot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
@@ -23,9 +28,15 @@ export default boot(({ app }) => {
   // ^ ^ ^ this will allow you to use this.$axios (for Vue Options API form)
   //       so you won't necessarily have to import axios in each vue file
 
-  app.config.globalProperties.$api = api
+  app.config.globalProperties.$api = apiPokemons
   // ^ ^ ^ this will allow you to use this.$api (for Vue Options API form)
   //       so you can easily perform requests against your app's API
+
+  app.config.globalProperties.$apiTypes = apiTypes
+  // ^ ^ ^ this will allow you to use this.$api (for Vue Options API form)
+  //       so you can easily perform requests against your app's API
+
+  app.config.globalProperties.$apiAxios = apiAxios
 })
 
-export { api }
+export { apiPokemons, apiTypes, apiAxios }

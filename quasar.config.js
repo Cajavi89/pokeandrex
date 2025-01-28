@@ -29,7 +29,8 @@ module.exports = configure(function (/* ctx */) {
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot: [
 
-      'axios'
+      'axios',
+      'vue-query'
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
@@ -65,9 +66,9 @@ module.exports = configure(function (/* ctx */) {
 
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
 
-      publicPath: '/'
+      publicPath: '/',
       // analyze: true,
-      // env: {},
+      env: require('dotenv').config().parsed
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,

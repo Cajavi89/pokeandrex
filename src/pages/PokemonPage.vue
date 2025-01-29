@@ -11,7 +11,7 @@
           </router-link>
 
           <!-- FOTO DEL POKEMON -->
-          <img class="imagen" :src="pokemon?.sprites.other.dream_world.front_default" />
+          <img class="imagen" :src="pokemon?.sprites.other.dream_world.front_default ?? pokemon?.sprites.front_default" />
 
           <!-- NOMBRE DEL POKEMON -->
            <div class="flex items-center">
@@ -29,7 +29,7 @@
 
         </div>
         <!-- INFO -->
-        <div class="flex justify-between full-width">
+        <div class="flex justify-between full-width q-pa-md bg-grey-4">
           <div class="flex">
 
             <ul class="vs-types-table" v-for="(type,index) of typeInfo" :key="index">
@@ -105,9 +105,74 @@
               />
             </ul>
           </div>
+
+          <!-- MOVIMIENTOS -->
           <div>
-            esto es la info
+            <p class="text-body2 text-bold q-mt-md">moves:</p>
+            <div class="row">
+                <div class="col-4">
+                  <q-card-section>
+                    <span>Learned by Level-Up:</span>
+                    <div v-for="(move, index) of movesByLevelup"
+                      :key="`${move}_${index}`"
+                    >
+                      <q-card
+                      @click="()=> isOpenMovesDestails = true"
+                      style="border: 1px solid 'grey-4';"
+                      class="cursor-pointer q-mb-md q-pa-xs"
+                      >
+                        <div class="text-capitalize">name:<span class="text-body2 text-bold q-ml-xs" style="text-decoration: underline;"> {{ move.name }} </span></div>
+                        <div>level:<span class="text-body2 text-bold q-ml-xs" style="text-decoration: underline;"> {{ move.level }} </span></div>
+                        <TypeChip
+                          :label="move.moveType "
+                          :type="move.moveType"
+                          :small="true"
+                        />
+                      </q-card>
+                    </div>
+                  </q-card-section>
+
+              </div>
+                <div class="col-4">
+                  <q-card-section>
+                    <div v-for="(move, index) of movesByTutor"
+                    :key="`${move}_${index}`"
+                    >
+                    <span>Learned by Tutor</span>
+                      <q-card @click="()=> isOpenMovesDestails = true" style="border: 1px solid 'grey-4';" class="cursor-pointer q-mb-md q-pa-xs ">
+                        <div class="text-capitalize">name:<span class="text-body2 text-bold q-ml-xs" style="text-decoration: underline;"> {{ move.name }} </span></div>
+                        <TypeChip
+                          :label="move.moveType "
+                          :type="move.moveType"
+                          :small="true"
+                        />
+                      </q-card>
+                    </div>
+                  </q-card-section>
+
+              </div>
+                <div class="col-4">
+                  <q-card-section>
+                    <span>Learned by Machine:</span>
+                    <div v-for="(move, index) of movesByMachine"
+                      :key="`${move}_${index}`"
+                    >
+                      <q-card @click="()=> isOpenMovesDestails = true" style="border: 1px solid 'grey-4';" class="cursor-pointer q-mb-md q-pa-xs ">
+                        <div class="text-capitalize">name:<span class="text-body2 text-bold q-ml-xs" style="text-decoration: underline;"> {{ move.name }} </span></div>
+                        <TypeChip
+                          :label="move.moveType "
+                          :type="move.moveType"
+                          :small="true"
+                        />
+                      </q-card>
+                    </div>
+                  </q-card-section>
+              </div>
+            </div>
+
           </div>
+
+          <!-- EVOLUCIONES -->
           <div>
             esto es la info
           </div>
@@ -124,6 +189,12 @@
 
       </div>
     </q-page>
+
+    <q-dialog v-model="isOpenMovesDestails">
+      <q-page  class="bg-white" style="width: 600px; height: 400px;">
+        Pronto esta funcionalidad
+      </q-page>
+    </q-dialog>
   </q-page-container>
   <!-- Mostrar nombre/ID del Pokémon -->
 
@@ -137,6 +208,7 @@ import TypeChip from 'src/components/typeChip/TypeChip.vue'
 import { PokemonsService } from 'src/api/pokeapi'
 import { IPokemonDetails, ITypeDamageRelation } from 'src/interfaces/getPokemonList'
 import { pickColor, PokemonType } from 'src/helpers/pickColor'
+// import { useDialogPluginComponent } from 'quasar'
 
 const route = useRoute()
 // const pokemions = usePokemons()
@@ -145,6 +217,61 @@ const typeInfo = ref<ITypeDamageRelation[]>([])
 const pokemonsService = new PokemonsService()
 // Mejor tipado para los parámetros de ruta
 const identifier = computed(() => (route.params.identifier as string)?.toLowerCase())
+
+// const { onDialogCancel } = useDialogPluginComponent()
+
+const isOpenMovesDestails = ref<boolean>(false)
+
+// const movesByMachine = computed(() => pokemon.value?.moves.filter(move => move.version_group_details[0].move_learn_method.name === 'machine'))
+// const movesByTutor = computed(() => pokemon.value?.moves.filter(move => move.version_group_details[0].move_learn_method.name === 'tutor'))
+const movesByLevelup = ref<{name: string, level: number, moveType: string}[]>([])
+const movesByTutor = ref<{name: string, level: number, moveType: string}[]>([])
+const movesByMachine = ref<{name: string, level: number, moveType: string}[]>([])
+
+const saveToLocalStorage = (key: string, data: any) => {
+  localStorage.setItem(key, JSON.stringify(data))
+}
+
+const getFromLocalStorage = (key: string) => {
+  const data = localStorage.getItem(key)
+  return data ? JSON.parse(data) : null
+}
+
+// Función auxiliar para obtener y procesar movimientos
+const getMoves = async (pokemon: IPokemonDetails, learnMethod: string, sortBy: 'level' | 'name' = 'level') => {
+  const cacheKey = `pokemon-moves-${pokemon.id}-${learnMethod}` // Clave única para el localStorage
+  const cachedMoves = getFromLocalStorage(cacheKey)
+
+  // Si los movimientos están en el localStorage, los devolvemos
+  if (cachedMoves) {
+    return cachedMoves
+  }
+
+  // Si no están en el localStorage, los obtenemos de la API
+  const moves = pokemon.moves
+    .filter(move => move.version_group_details[0].move_learn_method.name === learnMethod)
+    .map(async (move) => {
+      const moveDetails = await pokemonsService.getMove(move.move.url)
+      return {
+        name: move.move.name,
+        level: move.version_group_details[0].level_learned_at,
+        moveType: moveDetails.type.name
+      }
+    })
+
+  const resolvedMoves = await Promise.all(moves)
+
+  if (sortBy === 'level') {
+    resolvedMoves.sort((a, b) => a.level - b.level)
+  } else if (sortBy === 'name') {
+    resolvedMoves.sort((a, b) => a.name.localeCompare(b.name))
+  }
+
+  // Guardamos los movimientos en el localStorage para futuras consultas
+  saveToLocalStorage(cacheKey, resolvedMoves)
+
+  return resolvedMoves
+}
 
 onMounted(async () => {
   // traer y asignar el pokemon individual
@@ -155,8 +282,13 @@ onMounted(async () => {
     return await pokemonsService.getOneTypeDetails(type.type.name)
   }))
   typeInfo.value = getTypes
-}
-)
+
+  // Obtener y asignar movimientos
+  movesByLevelup.value = await getMoves(pokemon.value, 'level-up', 'level')
+  movesByTutor.value = await getMoves(pokemon.value, 'tutor', 'name')
+  movesByMachine.value = await getMoves(pokemon.value, 'machine', 'name')
+})
+
 </script>
 
 <style lang="sass" scoped>
@@ -168,11 +300,11 @@ onMounted(async () => {
   align-items: center!important
   // place-content: center
   // border: 1px solid red
-  max-width: 800px
+  // max-width: 800px
   margin: 0 auto
   position: relative // Necesario para posicionar el pseudo-elemento
   // overflow: hidden // Para evitar que el pseudo-elemento se salga del contenedor
-  background-color: #fff
+  background-color: $grey-4
   color: #000
   border-end-end-radius: 10px //bottom right
   border-start-end-radius: 10px // top right
@@ -214,6 +346,7 @@ onMounted(async () => {
 .imagen
   z-index: 99
   max-width: 300px
+  min-width: 300px
 
 .multiplier-text
   font-size: 20px
@@ -233,7 +366,7 @@ onMounted(async () => {
   margin-right: 10px
 
 .section-individual
-  border: 1px solid $grey-4
+  border: 1px solid $grey-5
   margin-bottom:10px
   border-radius: 10px
   padding:4px

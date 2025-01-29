@@ -3,6 +3,7 @@ import { PokemonsService } from 'src/api/pokeapi'
 // import { IPokemonDetails } from 'src/interfaces/getPokemonList'
 import { usePokemonsStore } from 'src/stores/pokemonStore'
 import { storeToRefs } from 'pinia'
+import { useQuasar } from 'quasar'
 
 export const usePokemons = () => {
   const pokemonService = new PokemonsService()
@@ -11,8 +12,10 @@ export const usePokemons = () => {
   // const error = ref<Error | null>(null) // Estado reactivo para manejar errores
   const isPokemonStored = ref<boolean>()
 
+  const q = useQuasar()
+
   const pokemonsStore = usePokemonsStore()
-  const { count, error, next, pokemonList, previous } = storeToRefs(pokemonsStore)
+  const { count, error, next, pokemonList, previous, auxiliarPokemonList } = storeToRefs(pokemonsStore)
 
   // Función asíncrona para cargar los datos
   const loadPokemons = async () => {
@@ -32,7 +35,7 @@ export const usePokemons = () => {
             id: poke.id,
             type: poke.types[0].type.name,
             name: poke.name,
-            sprite: poke.sprites.other.dream_world.front_default
+            sprite: poke.sprites.other.dream_world.front_default ?? poke.sprites.front_default
           }
         })
         // pokemonsList.value = details // Actualiza el estado reactivo
@@ -60,7 +63,7 @@ export const usePokemons = () => {
         id: poke.id,
         type: poke.types[0].type.name,
         name: poke.name,
-        sprite: poke.sprites.other.dream_world.front_default
+        sprite: poke.sprites.other.dream_world.front_default ?? poke.sprites.front_default
       }
     })
     pokeInfo.forEach(newPoke => pokemonList.value.push(newPoke))
@@ -69,6 +72,40 @@ export const usePokemons = () => {
     pokemonsStore.setCount(morePokemons.count)
     pokemonsStore.setNext(morePokemons.next)
     pokemonsStore.setPrevious(morePokemons.previous)
+  }
+
+  const searchOnePokemon = async (param: string | null) => {
+    pokemonsStore.setAuxiliarPokemonsList(pokemonList.value)
+    const storedPokemon = pokemonList.value.find(pokemon => pokemon.id === Number(param) || pokemon.name.toLowerCase() === param?.toLowerCase())
+    if (storedPokemon) return pokemonsStore.setPokemons([storedPokemon])
+
+    param && pokemonService.getOnePokemonDetails(param).then(pokemon => {
+      pokemonsStore.setPokemons([{
+        id: pokemon.id,
+        type: pokemon.types[0].type.name,
+        name: pokemon.name,
+        sprite: pokemon.sprites.other.dream_world.front_default ?? pokemon.sprites.front_default
+      }])
+    }).catch(err => {
+      q.notify({
+        message: `Pokemon ${err.response.data}`,
+        icon: 'warning',
+        color: 'red'
+      })
+    })
+
+    // if (pokemon) {
+    // pokemonsStore.setPokemons([{
+    //   id: pokemon.id,
+    //   type: pokemon.types[0].type.name,
+    //   name: pokemon.name,
+    //   sprite: pokemon.sprites.other.dream_world.front_default ?? pokemon.sprites.front_default
+    // }])
+    // }
+  }
+
+  const restorePokemonList = () => {
+    pokemonsStore.setPokemons(auxiliarPokemonList.value)
   }
 
   // Llama a la función asíncrona para cargar los datos
@@ -82,6 +119,8 @@ export const usePokemons = () => {
     next,
     previous,
     loading,
-    loadMorePokemons
+    loadMorePokemons,
+    searchOnePokemon,
+    restorePokemonList
   }
 }

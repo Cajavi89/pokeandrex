@@ -1,4 +1,5 @@
 import { apiAxios, apiPokemons, apiTypes } from 'src/boot/axios'
+import { IGetMove } from 'src/interfaces/getMove'
 import { IGetPokemon, IPokemonDetails, ITypeDamageRelation } from 'src/interfaces/getPokemonList'
 
 /* eslint-disable semi */
@@ -20,6 +21,11 @@ export class PokemonsService {
   async getOnePokemonDetails (id: string): Promise<IPokemonDetails> {
     const response = await apiPokemons.get(`/${id}`);
     return response.data;
+  }
+
+  async getMove (url: string):Promise<IGetMove> {
+    const response = await apiAxios.get(url)
+    return response.data
   }
 
   async getAllTypes () {

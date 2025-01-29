@@ -17,7 +17,7 @@ export const pickColor = (type: PokemonType) => {
     rock: '#B6A136',
     ghost: '#735797',
     dragon: '#6F35FC',
-    dark: '#705746',
+    dark: '#110930',
     steel: '#B7B7CE',
     fairy: '#D685AD'
   }

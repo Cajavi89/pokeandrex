@@ -9,6 +9,7 @@ export const usePokemonsStore = defineStore('pokemons', () => {
   const next = ref('') // Siguiente página
   const previous = ref('') // Página anterior
   const error = ref<any>(null) // Manejo de errores
+  const auxiliarPokemonList = ref<IPokemonInitialInfo[]>([])
 
   const storedPokemonList = localStorage.getItem('pokemonList')
   if (storedPokemonList) pokemonList.value = JSON.parse(storedPokemonList)
@@ -20,6 +21,7 @@ export const usePokemonsStore = defineStore('pokemons', () => {
     next,
     previous,
     error,
+    auxiliarPokemonList,
     // Setters
     // Actions
     setPokemons (data : IPokemonInitialInfo[]) {
@@ -33,6 +35,9 @@ export const usePokemonsStore = defineStore('pokemons', () => {
     },
     setPrevious (data : string | null) {
       if (data !== null) previous.value = data
+    },
+    setAuxiliarPokemonsList (data: IPokemonInitialInfo[]) {
+      auxiliarPokemonList.value = data
     }
   }
 })

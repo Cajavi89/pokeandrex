@@ -109,6 +109,11 @@ export interface IPokemonInitialInfo{
   type: string
 }
 
+export interface ISPecies{
+  name: string,
+  url: string
+}
+
 export interface IPokemonDetails{
   abilities: IAbilities[]
   base_experience: number
@@ -123,6 +128,7 @@ export interface IPokemonDetails{
   order: number
   sprites: ISprites
   stats: IStats[]
+  species:ISPecies
   types: ITypes[]
   weight: number
 }

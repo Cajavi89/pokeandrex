@@ -4,20 +4,20 @@
     <q-form>
       <q-input
        outlined
-       label='Search Pokemon'
+       label='Pokemon name or id'
        v-model='pokeName'
        bg-color="grey-9"
        color="grey-4"
        dark
        rounded
        style="max-width: 800px; margin:0 auto"
-       :debounce="300"
+       :debounce="500"
        @update:model-value="searchPokemon"
       >
         <template v-slot:append>
           <q-btn
             @click='searchPokemon'
-            label='buscar'
+            label='search'
             color='white'
             text-color="black"
             type='submit'
@@ -38,6 +38,7 @@
     </div>
     <!-- <div v-if="isLoading">cargando</div> -->
      <q-btn v-if="pokemions.pokemonList.value.length > 1" @click="pokemions.loadMorePokemons(pokemions.next.value)">Load more!</q-btn>
+     <q-btn no-caps class="clear-btn" icon="warning" color="warning" @click="clearList">Clear list</q-btn>
 
   </q-page>
 </template>
@@ -58,6 +59,11 @@ const searchPokemon = async () => {
 onMounted(() => {
   if (!pokeName.value && pokemions.pokemonList.value.length <= 1) pokemions.restorePokemonList()
 })
+
+const clearList = () => {
+  localStorage.removeItem('pokemonList')
+  pokemions.loadPokemons()
+}
 </script>
 
 <style scoped>
@@ -67,6 +73,7 @@ onMounted(() => {
   align-items: center;
 }
 .general-wrapper{
+  position: relative;
   max-width: 1280px;
   margin: 0 auto;
 }
@@ -90,5 +97,12 @@ onMounted(() => {
 
 .title{
   font-family: 'Atma', serif;
+}
+
+.clear-btn{
+  position: absolute;
+  bottom:5px;
+  left: 10px;
+  opacity: 0.6;
 }
 </style>

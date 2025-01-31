@@ -37,4 +37,9 @@ export class PokemonsService {
     const response = await apiTypes.get(`/${id}`);
     return response.data.damage_relations;
   }
+
+  async getWithAxios <T> (url: string) {
+    const response = await apiAxios.get<T>(url)
+    return response.data
+  }
 }

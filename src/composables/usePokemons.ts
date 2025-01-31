@@ -121,6 +121,7 @@ export const usePokemons = () => {
     loading,
     loadMorePokemons,
     searchOnePokemon,
-    restorePokemonList
+    restorePokemonList,
+    loadPokemons
   }
 }

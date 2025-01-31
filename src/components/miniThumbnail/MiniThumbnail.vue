@@ -1,6 +1,7 @@
 <template>
   <router-link :to="`/pokemon/${props.name}`">
     <figure class="wrapper" :style="{backgroundColor: pickColor(props.type as PokemonType)}">
+      <q-badge class="poke-id">#{{ props.id }}</q-badge>
       <q-img
         :src="props.url"
         style="max-width: 100%; max-height: 100%;"
@@ -56,5 +57,12 @@ const props = defineProps<IMiniThumbnailProps>()
     opacity: 0.3// Reducir la opacidad de la imagen de fondo
     transform: rotate(15deg) // Rotar la imagen de fondo
     z-index: 0 // Enviar el pseudo-elemento al fondo para que no cubra el contenido
+
+.poke-id
+  position: absolute
+  z-index: 99
+  top:5px
+  right: 10px
+  padding: 5px 6px
 
 </style>

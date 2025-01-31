@@ -3,10 +3,15 @@
     <q-page >
       <div class="card-wrapper relative-position" >
 
-        <div class="header" :style="{backgroundColor : pickColor(pokemon?.types[0].type.name as PokemonType)}">
+        <!-- <div class="header" :style="{backgroundColor : pickColor(pokemon?.types[0].type.name as PokemonType)}"> -->
+        <div class="header"
+          :style="{background: `linear-gradient(135deg, ${pickColor(pokemon?.types[0].type.name as PokemonType)} 50%,
+             ${pickColor(pokemon?.types[1]?.type.name as PokemonType) ||
+             `${pickColor(pokemon?.types[0]?.type.name as PokemonType)}`} 50%)`}"
+        >
 
           <!-- BOTON DE VOLVER -->
-           <router-link to="/" class="text-white">
+           <router-link :to="'/'" class="text-white">
             <q-icon name="west" size="xl" class="absolute-top-left cursor-pointer" />
           </router-link>
 
@@ -135,10 +140,10 @@
               </div>
                 <div class="col-4">
                   <q-card-section>
+                    <span>Learned by Tutor</span>
                     <div v-for="(move, index) of movesByTutor"
                     :key="`${move}_${index}`"
                     >
-                    <span>Learned by Tutor</span>
                       <q-card @click="()=> isOpenMovesDestails = true" style="border: 1px solid 'grey-4';" class="cursor-pointer q-mb-md q-pa-xs ">
                         <div class="text-capitalize">name:<span class="text-body2 text-bold q-ml-xs" style="text-decoration: underline;"> {{ move.name }} </span></div>
                         <TypeChip
@@ -173,8 +178,32 @@
           </div>
 
           <!-- EVOLUCIONES -->
-          <div>
-            esto es la info
+          <div class="evolution-chain-wrapper">
+            <div class="text-bold">Evolution chain:</div>
+            <q-card v-for="pokeInfo of allEvolveData" :key="pokeInfo.name"  class="evolution-chain-element" >
+              <router-link class="router-link-c" :to="`/pokemon/${pokeInfo?.name}`">
+                <div class="text-bold text-center text-capitalize">
+                  {{ pokeInfo.name }}
+                </div>
+                <img class="img-poke-evol" v-if="pokeInfo.sprites" :src="pokeInfo.sprites.other.dream_world.front_default ?? pokeInfo.sprites.front_default" />
+                <div v-if="pokeInfo.minLevel || pokeInfo.trigger || pokeInfo.item?.name" class="col table-evolve-info">
+                  <div v-if="pokeInfo.minLevel" class="row col evolve-info-row">
+                    <div class="col-6">Level:</div>
+                    <div class="col-6">{{ pokeInfo?.minLevel }}</div>
+                  </div>
+                  <div v-if="pokeInfo.trigger" class="row col evolve-info-row">
+                    <div class="col-6">Trigger:</div>
+                    <div class="col-6">{{ pokeInfo?.trigger }}</div>
+                  </div>
+                  <div v-if="pokeInfo.item?.name && pokeInfo.trigger ==='use-item'"  class="row col evolve-info-row">
+                    <div class="col-6">Item:</div>
+                    <div class="col-6">{{ pokeInfo?.item?.name }}</div>
+                  </div>
+                </div>
+
+              </router-link>
+
+            </q-card>
           </div>
         </div>
       </div>
@@ -202,12 +231,13 @@
 
 <script lang="ts" setup>
 // import { usePokemons } from 'src/composables/usePokemons'
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import TypeChip from 'src/components/typeChip/TypeChip.vue'
 import { PokemonsService } from 'src/api/pokeapi'
 import { IPokemonDetails, ITypeDamageRelation } from 'src/interfaces/getPokemonList'
 import { pickColor, PokemonType } from 'src/helpers/pickColor'
+import { IAllEvolutionSimpleInfo, IEvolutionChain, IEvolutionSimpleInfo } from 'src/interfaces/evolutionChain'
 // import { useDialogPluginComponent } from 'quasar'
 
 const route = useRoute()
@@ -222,11 +252,11 @@ const identifier = computed(() => (route.params.identifier as string)?.toLowerCa
 
 const isOpenMovesDestails = ref<boolean>(false)
 
-// const movesByMachine = computed(() => pokemon.value?.moves.filter(move => move.version_group_details[0].move_learn_method.name === 'machine'))
-// const movesByTutor = computed(() => pokemon.value?.moves.filter(move => move.version_group_details[0].move_learn_method.name === 'tutor'))
 const movesByLevelup = ref<{name: string, level: number, moveType: string}[]>([])
 const movesByTutor = ref<{name: string, level: number, moveType: string}[]>([])
 const movesByMachine = ref<{name: string, level: number, moveType: string}[]>([])
+
+const allEvolveData = ref<IAllEvolutionSimpleInfo[] | null | undefined>([])
 
 const saveToLocalStorage = (key: string, data: any) => {
   localStorage.setItem(key, JSON.stringify(data))
@@ -273,11 +303,40 @@ const getMoves = async (pokemon: IPokemonDetails, learnMethod: string, sortBy: '
   return resolvedMoves
 }
 
-onMounted(async () => {
+const getEvolveInfo = async (url: string): Promise<IEvolutionSimpleInfo[]> => {
+  const evolveData: IEvolutionChain = await pokemonsService.getWithAxios(url)
+
+  return [
+    {
+      name: evolveData.chain.species.name,
+      minLevel: evolveData.chain?.evolution_details[0]?.min_level || null,
+      trigger: evolveData.chain?.evolution_details[0]?.trigger?.name || null,
+      item: evolveData.chain?.evolution_details[0]?.item
+        ? { name: evolveData.chain.evolution_details[0].item.name, url: evolveData.chain.evolution_details[0].item.url }
+        : null
+    },
+    {
+      name: evolveData.chain.evolves_to[0]?.species.name || null,
+      minLevel: evolveData?.chain?.evolves_to[0]?.evolution_details[0]?.min_level || null,
+      trigger: evolveData?.chain?.evolves_to[0]?.evolution_details[0]?.trigger?.name || null,
+      item: evolveData?.chain?.evolves_to[0]?.evolution_details[0]?.item
+        ? { name: evolveData.chain.evolves_to[0].evolution_details[0].item.name, url: evolveData.chain.evolves_to[0].evolution_details[0].item.url }
+        : null
+    },
+    {
+      name: evolveData.chain.evolves_to[0]?.evolves_to[0]?.species.name || null,
+      minLevel: evolveData?.chain.evolves_to[0]?.evolves_to[0]?.evolution_details[0]?.min_level || null,
+      trigger: evolveData?.chain.evolves_to[0]?.evolves_to[0]?.evolution_details[0]?.trigger?.name || null,
+      item: evolveData?.chain.evolves_to[0]?.evolves_to[0]?.evolution_details[0]?.item
+        ? { name: evolveData.chain.evolves_to[0].evolves_to[0].evolution_details[0].item.name, url: evolveData.chain.evolves_to[0].evolves_to[0].evolution_details[0].item.url }
+        : null
+    }
+  ]
+}
+
+const loadPokemons = async () => {
   // traer y asignar el pokemon individual
   pokemon.value = await pokemonsService.getOnePokemonDetails(identifier.value)
-
-  // traer los tipos damage relation
   const getTypes = await Promise.all(pokemon.value.types.map(async (type) => {
     return await pokemonsService.getOneTypeDetails(type.type.name)
   }))
@@ -287,7 +346,30 @@ onMounted(async () => {
   movesByLevelup.value = await getMoves(pokemon.value, 'level-up', 'level')
   movesByTutor.value = await getMoves(pokemon.value, 'tutor', 'name')
   movesByMachine.value = await getMoves(pokemon.value, 'machine', 'name')
+
+  const specieInfo:any = await pokemonsService.getWithAxios(pokemon.value.species.url)
+  const evolveInfo:IEvolutionSimpleInfo[] = specieInfo && await getEvolveInfo(specieInfo.evolution_chain.url)
+  allEvolveData.value = (await Promise.all(evolveInfo.map(async (poke) => {
+    if (poke.name) {
+      const pokeMion = await pokemonsService.getOnePokemonDetails(poke.name)
+      return {
+        name: poke.name,
+        trigger: poke.trigger,
+        minLevel: poke.minLevel !== null ? String(poke.minLevel) : null, // Convertir a string
+        sprites: pokeMion.sprites,
+        item: poke.item
+      }
+    }
+    return null // Para evitar valores undefined
+  }))).filter(Boolean) as IAllEvolutionSimpleInfo[] // Filtrar valores nulos y forzar el tipo
+}
+
+onMounted(async () => {
+  await loadPokemons()
 })
+
+watch(() => route.params.identifier,
+  async () => await loadPokemons())
 
 </script>
 
@@ -300,7 +382,7 @@ onMounted(async () => {
   align-items: center!important
   // place-content: center
   // border: 1px solid red
-  // max-width: 800px
+  max-width: 1200px
   margin: 0 auto
   position: relative // Necesario para posicionar el pseudo-elemento
   // overflow: hidden // Para evitar que el pseudo-elemento se salga del contenedor
@@ -371,4 +453,46 @@ onMounted(async () => {
   border-radius: 10px
   padding:4px
 
+.evolution-chain-wrapper
+  display: flex
+  flex-direction: column
+  row-gap: 10px
+
+.evolution-chain-element
+  padding: 5px
+  max-height: 210px
+  max-width: 180px
+  min-width: 180px
+  display: flex
+  justify-content: center
+  align-items: center
+
+  & .img-poke-evol
+      max-width: 100px
+      max-height: 100px
+      width: 100%
+      height: 100%
+
+.router-link-c
+  color: #000
+  text-decoration: none
+  width: 100%
+  display: flex
+  flex-direction: column
+  justify-content: center
+  align-items: center
+  row-gap: 10px
+
+.table-evolve-info
+  width: 100%
+  border-end-end-radius: 10px //bottom right
+  border-end-start-radius: 10px //bottom left
+  border-start-end-radius: 10px // top right
+  border-start-start-radius: 10px //top left
+  border: 1px solid $grey-5
+
+.evolve-info-row
+  // border: 1px solid $grey-5
+  &>div
+    padding: 3px
 </style>

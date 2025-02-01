@@ -16,7 +16,26 @@
           </router-link>
 
           <!-- FOTO DEL POKEMON -->
-          <img class="imagen" :src="pokemon?.sprites.other.dream_world.front_default ?? pokemon?.sprites.front_default" />
+          <div class="stats-picture">
+            <div class="stats-wrapper">
+              <div class="text-grey-9 text-bold text-body1">Base stats:</div>
+              <div v-for="pokeStat of pokemon?.stats" :key="pokeStat.stat.name" class="slider-and-name col-12">
+
+                <div class="stat-name text-capitalize col-6">{{ pokeStat.stat.name }}</div>
+                <q-slider
+                class="col-6 sliderr"
+                  v-model="pokeStat.base_stat"
+                  :min="1"
+                  :max="170"
+                  label
+                  label-always
+                  color="primary"
+                />
+              </div>
+            </div>
+            <img class="imagen" :src="pokemon?.sprites.other.dream_world.front_default ?? pokemon?.sprites.front_default" />
+
+          </div>
 
           <!-- NOMBRE DEL POKEMON -->
            <div class="flex items-center">
@@ -237,7 +256,7 @@ import TypeChip from 'src/components/typeChip/TypeChip.vue'
 import { PokemonsService } from 'src/api/pokeapi'
 import { IPokemonDetails, ITypeDamageRelation } from 'src/interfaces/getPokemonList'
 import { pickColor, PokemonType } from 'src/helpers/pickColor'
-import { IAllEvolutionSimpleInfo, IEvolutionChain, IEvolutionSimpleInfo } from 'src/interfaces/evolutionChain'
+import { Chain, IAllEvolutionSimpleInfo, IEvolutionChain, IEvolutionSimpleInfo } from 'src/interfaces/evolutionChain'
 // import { useDialogPluginComponent } from 'quasar'
 
 const route = useRoute()
@@ -306,32 +325,28 @@ const getMoves = async (pokemon: IPokemonDetails, learnMethod: string, sortBy: '
 const getEvolveInfo = async (url: string): Promise<IEvolutionSimpleInfo[]> => {
   const evolveData: IEvolutionChain = await pokemonsService.getWithAxios(url)
 
-  return [
-    {
-      name: evolveData.chain.species.name,
-      minLevel: evolveData.chain?.evolution_details[0]?.min_level || null,
-      trigger: evolveData.chain?.evolution_details[0]?.trigger?.name || null,
-      item: evolveData.chain?.evolution_details[0]?.item
-        ? { name: evolveData.chain.evolution_details[0].item.name, url: evolveData.chain.evolution_details[0].item.url }
-        : null
-    },
-    {
-      name: evolveData.chain.evolves_to[0]?.species.name || null,
-      minLevel: evolveData?.chain?.evolves_to[0]?.evolution_details[0]?.min_level || null,
-      trigger: evolveData?.chain?.evolves_to[0]?.evolution_details[0]?.trigger?.name || null,
-      item: evolveData?.chain?.evolves_to[0]?.evolution_details[0]?.item
-        ? { name: evolveData.chain.evolves_to[0].evolution_details[0].item.name, url: evolveData.chain.evolves_to[0].evolution_details[0].item.url }
-        : null
-    },
-    {
-      name: evolveData.chain.evolves_to[0]?.evolves_to[0]?.species.name || null,
-      minLevel: evolveData?.chain.evolves_to[0]?.evolves_to[0]?.evolution_details[0]?.min_level || null,
-      trigger: evolveData?.chain.evolves_to[0]?.evolves_to[0]?.evolution_details[0]?.trigger?.name || null,
-      item: evolveData?.chain.evolves_to[0]?.evolves_to[0]?.evolution_details[0]?.item
-        ? { name: evolveData.chain.evolves_to[0].evolves_to[0].evolution_details[0].item.name, url: evolveData.chain.evolves_to[0].evolves_to[0].evolution_details[0].item.url }
+  const extractEvolutionInfo = (chain: Chain): IEvolutionSimpleInfo[] => {
+    const currentEvolution: IEvolutionSimpleInfo = {
+      name: chain.species.name,
+      minLevel: chain.evolution_details[0]?.min_level || null,
+      trigger: chain.evolution_details[0]?.trigger?.name || null,
+      item: chain.evolution_details[0]?.item
+        ? { name: chain.evolution_details[0].item.name, url: chain.evolution_details[0].item.url }
         : null
     }
-  ]
+
+    const evolutions: IEvolutionSimpleInfo[] = [currentEvolution]
+
+    if (chain.evolves_to.length > 0) {
+      chain.evolves_to.forEach((evolution) => {
+        evolutions.push(...extractEvolutionInfo(evolution))
+      })
+    }
+
+    return evolutions
+  }
+
+  return extractEvolutionInfo(evolveData.chain)
 }
 
 const loadPokemons = async () => {
@@ -411,7 +426,7 @@ watch(() => route.params.identifier,
   row-gap: 20px
 
   &::before
-    content: 'asdasdasd'
+    content: ''
     position: absolute
     top: 0
     left: 0
@@ -429,6 +444,7 @@ watch(() => route.params.identifier,
   z-index: 99
   max-width: 300px
   min-width: 300px
+  max-height: 300px
 
 .multiplier-text
   font-size: 20px
@@ -495,4 +511,25 @@ watch(() => route.params.identifier,
   // border: 1px solid $grey-5
   &>div
     padding: 3px
+
+.stats-picture
+  display: flex
+  column-gap: 20px
+  width: 100%
+  justify-content: space-around
+  align-items: center
+
+.stats-wrapper
+  overflow-x: hidden
+  width: 400px
+
+.slider-and-name
+  display: flex
+  column-gap: 10px
+  align-items: center
+  &.stat-name
+    min-width: 300px
+
+.sliderr
+  pointer-events: none
 </style>
